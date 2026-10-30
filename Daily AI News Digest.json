@@ -1,0 +1,452 @@
+{
+  "name": "Daily AI News Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "3aedb0c0-d630-4679-8738-de93b0a8c145",
+      "name": "Every Day at 9 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\"feeds\":[{\"name\":\"Google News - AI\",\"url\":\"https://news.google.com/rss/search?q=%22artificial+intelligence%22+OR+%22generative+AI%22+when:1d&hl=en-US&gl=US&ceid=US:en\"},{\"name\":\"TechCrunch AI\",\"url\":\"https://techcrunch.com/category/artificial-intelligence/feed/\"},{\"name\":\"The Verge AI\",\"url\":\"https://www.theverge.com/rss/ai-artificial-intelligence/index.xml\"},{\"name\":\"VentureBeat AI\",\"url\":\"https://venturebeat.com/category/ai/feed/\"}]}",
+        "options": {}
+      },
+      "id": "c99835d9-fd87-4489-afa7-3430076ddebc",
+      "name": "AI News Sources",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        272,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "feeds",
+        "options": {}
+      },
+      "id": "cc8ed941-126f-44ea-ad60-9ae45dff2cc4",
+      "name": "Split Out Feeds",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        496,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "id": "a356a552-54af-4f89-b68c-10e2dc99efe4",
+      "name": "Search AI News",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        128
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "title",
+              "type": "string",
+              "value": "={{ $json.title }}"
+            },
+            {
+              "id": "a2",
+              "name": "link",
+              "type": "string",
+              "value": "={{ $json.link }}"
+            },
+            {
+              "id": "a3",
+              "name": "source",
+              "type": "string",
+              "value": "={{ $('Split Out Feeds').item.json.name }}"
+            },
+            {
+              "id": "a4",
+              "name": "published_at",
+              "type": "string",
+              "value": "={{ $json.isoDate || $json.pubDate || \"\" }}"
+            },
+            {
+              "id": "a5",
+              "name": "summary",
+              "type": "string",
+              "value": "={{ ($json.contentSnippet || \"\").replace(/\\s+/g, \" \").slice(0, 300) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c949e577-de06-43dc-847f-83c02e95c530",
+      "name": "Format Story",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        944,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.link }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.published_at ? new Date($json.published_at).getTime() : Date.now() }}",
+              "rightValue": "={{ $now.minus({ hours: 36 }).toMillis() }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3e9494e3-3436-4e49-9ddd-2e0e9b25e04c",
+      "name": "Last 36 Hours Only",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1168,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "SP20nKr9TuOMnWc8",
+          "cachedResultName": "AI News Log"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "link",
+              "keyValue": "={{ $json.link }}"
+            }
+          ]
+        }
+      },
+      "id": "5d733c5d-85bc-4dd3-9685-a8436455fe07",
+      "name": "Keep Only New Stories",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "SP20nKr9TuOMnWc8",
+          "cachedResultName": "AI News Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "title": "={{ $json.title }}",
+            "link": "={{ $json.link }}",
+            "source": "={{ $json.source }}",
+            "published_at": "={{ $json.published_at }}",
+            "summary": "={{ $json.summary }}",
+            "first_seen": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "link",
+              "displayName": "link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "published_at",
+              "displayName": "published_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "first_seen",
+              "displayName": "first_seen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1334aaae-33a9-4a83-8b40-7c9cd38a8390",
+      "name": "Add to News Log",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "stories",
+        "options": {}
+      },
+      "id": "f6429db5-2d58-4188-9d47-b064d9d0bf82",
+      "name": "Collect New Stories",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "mustafaqasimali72@gmail.com",
+        "subject": "=AI News Update - {{ $now.toFormat(\"dd LLL yyyy\") }} ({{ $json.stories.length }} new stories)",
+        "message": "=<h2>Today's AI news ({{ $json.stories.length }} new)</h2><ol>{{ $json.stories.map(s => \"<li style=\\\"margin-bottom:12px\\\"><a href=\\\"\" + s.link + \"\\\"><b>\" + s.title + \"</b></a><br><small>\" + s.source + (s.published_at ? \" - \" + s.published_at : \"\") + \"</small><br>\" + (s.summary || \"\") + \"</li>\").join(\"\") }}</ol><p style=\"color:#888\">All stories are also saved to the AI News Log data table in n8n.</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "e13376e7-6eef-4d28-81c9-b61c9d5b3ab7",
+      "name": "Email AI News Digest",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1248,
+        320
+      ],
+      "webhookId": "8d7f9b81-90a2-44fd-8570-4ee66606f351",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HMxRhHU0Dj3DwTpL",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Day at 9 AM": {
+      "main": [
+        [
+          {
+            "node": "AI News Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI News Sources": {
+      "main": [
+        [
+          {
+            "node": "Split Out Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Feeds": {
+      "main": [
+        [
+          {
+            "node": "Search AI News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search AI News": {
+      "main": [
+        [
+          {
+            "node": "Format Story",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Story": {
+      "main": [
+        [
+          {
+            "node": "Last 36 Hours Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Last 36 Hours Only": {
+      "main": [
+        [
+          {
+            "node": "Keep Only New Stories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Only New Stories": {
+      "main": [
+        [
+          {
+            "node": "Add to News Log",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Collect New Stories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect New Stories": {
+      "main": [
+        [
+          {
+            "node": "Email AI News Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "133e8325-1891-48a8-89ae-d3db891f3008",
+  "meta": {
+    "instanceId": "d8e296d584034790ee03938b3739c7d8610f063df5dae2b84fe768ef2188f948"
+  },
+  "nodeGroups": [
+    {
+      "id": "0ddc3a69-20b6-46f9-8bb3-ab7af4cc5ebc",
+      "name": "Gather AI headlines",
+      "nodeIds": [
+        "c99835d9-fd87-4489-afa7-3430076ddebc",
+        "cc8ed941-126f-44ea-ad60-9ae45dff2cc4",
+        "a356a552-54af-4f89-b68c-10e2dc99efe4",
+        "c949e577-de06-43dc-847f-83c02e95c530",
+        "3e9494e3-3436-4e49-9ddd-2e0e9b25e04c"
+      ],
+      "description": "Reads four AI news feeds each morning and keeps stories published in the last 36 hours"
+    },
+    {
+      "id": "495882e4-4d7c-43de-8b5b-17bbe6277231",
+      "name": "Log and alert new stories",
+      "nodeIds": [
+        "5d733c5d-85bc-4dd3-9685-a8436455fe07",
+        "1334aaae-33a9-4a83-8b40-7c9cd38a8390",
+        "f6429db5-2d58-4188-9d47-b064d9d0bf82",
+        "e13376e7-6eef-4d28-81c9-b61c9d5b3ab7"
+      ],
+      "description": "Skips stories already in the log, saves fresh ones to it, then emails one digest of them"
+    }
+  ],
+  "id": "gYOLzdJuo8XKPh8P",
+  "tags": []
+}
