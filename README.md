@@ -1,5 +1,5 @@
 
-# ⚡ n8n Workflows | AI Automation Portfolio
+# ⚡ n8n Workflows | AI Automation
 
 A collection of practical workflow automation projects built using **n8n**, Python, APIs, and AI/LLM integrations.
 
