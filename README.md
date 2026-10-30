@@ -95,8 +95,6 @@ Report Generation
 Storage & Notification
 ```
 
-**Project Files:** [Daily News Intelligence](./workflows/01-daily-news-intelligence/)
-
 ---
 
 ## 🎯 Skills Demonstrated
@@ -156,9 +154,8 @@ I will continue adding workflows, documenting implementations, and improving exi
 
 **Mustafa Qasim Ali**
 
-- GitHub: https://github.com/YOUR_USERNAME
-- LinkedIn: [Add Your LinkedIn URL]
-- Portfolio: [Add Your Portfolio URL]
+- GitHub: https://github.com/hussainali99a
+- LinkedIn:  [www.linkedin.com/in/mustafa-qasim-ali](https://www.linkedin.com/in/mustafa-qasim-ali)
 
 ---
 
